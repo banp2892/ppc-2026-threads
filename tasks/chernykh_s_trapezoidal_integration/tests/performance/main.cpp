@@ -17,6 +17,7 @@ class ExampleRunPerfTestThreads : public ppc::util::BaseRunPerfTests<InType, Out
   void SetUp() override {
     input_data_ = kCount_;
   }
+  
 
   bool CheckTestOutputData(OutType &output_data) final {
     return input_data_ == output_data;
