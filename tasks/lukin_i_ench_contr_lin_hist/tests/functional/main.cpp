@@ -8,6 +8,7 @@
 #include <string>
 
 #include "lukin_i_ench_contr_lin_hist/common/include/common.hpp"
+#include "lukin_i_ench_contr_lin_hist/omp/include/ops_omp.hpp"
 #include "lukin_i_ench_contr_lin_hist/seq/include/ops_seq.hpp"
 #include "util/include/func_test_util.hpp"
 #include "util/include/util.hpp"
@@ -69,8 +70,9 @@ TEST_P(LukinIRunFuncTestsThreads, LinearHist) {
 
 const std::array<TestType, 3> kTestParam = {128, 256, 512};  // размер изображения
 
-const auto kTestTasksList =
-    ppc::util::AddFuncTask<LukinITestTaskSEQ, InType>(kTestParam, PPC_SETTINGS_lukin_i_ench_contr_lin_hist);
+const auto kTestTasksList = std::tuple_cat(
+    ppc::util::AddFuncTask<LukinITestTaskSEQ, InType>(kTestParam, PPC_SETTINGS_lukin_i_ench_contr_lin_hist),
+    ppc::util::AddFuncTask<LukinITestTaskOMP, InType>(kTestParam, PPC_SETTINGS_lukin_i_ench_contr_lin_hist));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
