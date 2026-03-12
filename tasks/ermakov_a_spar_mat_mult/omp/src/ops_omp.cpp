@@ -239,7 +239,7 @@ bool ErmakovASparMatMultOMP::RunImpl() {
         }
       }
 
-      std::ranges::sort(used_cols);
+      std::sort(used_cols.begin(), used_cols.end());
 
       int write_pos = c_.row_ptr[static_cast<std::size_t>(i)];
       for (int k : used_cols) {
