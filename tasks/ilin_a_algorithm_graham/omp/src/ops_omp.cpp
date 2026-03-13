@@ -28,7 +28,7 @@ Point FindLowestLeftmost(const std::vector<Point> &points) {
   {
     Point local_p0 = p0;
 #pragma omp for nowait
-    for (int i = 1; i < static_cast<int>(points.size()); ++i) {
+    for (size_t i = 1; i < points.size(); ++i) {
       if (points[i].y < local_p0.y || (points[i].y == local_p0.y && points[i].x < local_p0.x)) {
         local_p0 = points[i];
       }
