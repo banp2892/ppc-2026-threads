@@ -1,8 +1,9 @@
 #include "trofimov_n_hoar_sort_batcher/omp/include/ops_omp.hpp"
 
 #include <algorithm>
-#include <cstddef>
 #include <vector>
+
+#include "trofimov_n_hoar_sort_batcher/common/include/common.hpp"
 
 namespace trofimov_n_hoar_sort_batcher {
 
@@ -14,13 +15,11 @@ int HoarePartition(std::vector<int> &arr, int left, int right) {
   int j = right + 1;
 
   while (true) {
-    do {
-      ++i;
-    } while (arr[i] < pivot);
+    while (arr[++i] < pivot) {
+    }
 
-    do {
-      --j;
-    } while (arr[j] > pivot);
+    while (arr[--j] > pivot) {
+    }
 
     if (i >= j) {
       return j;
@@ -36,6 +35,7 @@ void QuickSortOmpTask(std::vector<int> &arr, int left, int right, int depth_limi
   }
 
   constexpr int kSequentialThreshold = 1024;
+
   if ((right - left) < kSequentialThreshold || depth_limit <= 0) {
     std::sort(arr.begin() + left, arr.begin() + right + 1);
     return;
@@ -43,10 +43,12 @@ void QuickSortOmpTask(std::vector<int> &arr, int left, int right, int depth_limi
 
   const int split = HoarePartition(arr, left, right);
 
-#pragma omp task shared(arr) if ((split - left) > kSequentialThreshold)
+#pragma omp task default(none) shared(arr) \
+    firstprivate(left, split, depth_limit) if ((split - left) > kSequentialThreshold)
   QuickSortOmpTask(arr, left, split, depth_limit - 1);
 
-#pragma omp task shared(arr) if ((right - (split + 1)) > kSequentialThreshold)
+#pragma omp task default(none) shared(arr) \
+    firstprivate(split, right, depth_limit) if ((right - (split + 1)) > kSequentialThreshold)
   QuickSortOmpTask(arr, split + 1, right, depth_limit - 1);
 
 #pragma omp taskwait
@@ -70,11 +72,12 @@ bool TrofimovNHoarSortBatcherOMP::PreProcessingImpl() {
 
 bool TrofimovNHoarSortBatcherOMP::RunImpl() {
   auto &data = GetOutput();
+
   if (data.size() <= 1) {
     return true;
   }
 
-#pragma omp parallel
+#pragma omp parallel default(none) shared(data)
   {
 #pragma omp single nowait
     {
