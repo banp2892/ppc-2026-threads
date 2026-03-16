@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "dergynov_s_integrals_multistep_rectangle/common/include/common.hpp"
+#include "dergynov_s_integrals_multistep_rectangle/omp/include/ops_omp.hpp"
 #include "dergynov_s_integrals_multistep_rectangle/seq/include/ops_seq.hpp"
 #include "util/include/func_test_util.hpp"
 #include "util/include/util.hpp"
@@ -203,8 +204,11 @@ const std::array<TestType, 19> kTests = {{
              ExactExp2D(0.0, 1.0)},
 }};
 
-const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<DergynovSIntegralsMultistepRectangleSEQ, InType>(
-    kTests, PPC_SETTINGS_dergynov_s_integrals_multistep_rectangle));
+const auto kTestTasksList = std::tuple_cat(
+    ppc::util::AddFuncTask<DergynovSIntegralsMultistepRectangleSEQ, InType>(
+        kTests, PPC_SETTINGS_dergynov_s_integrals_multistep_rectangle),
+    ppc::util::AddFuncTask<DergynovSIntegralsMultistepRectangleOMP, InType>(
+        kTests, PPC_SETTINGS_dergynov_s_integrals_multistep_rectangle));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
