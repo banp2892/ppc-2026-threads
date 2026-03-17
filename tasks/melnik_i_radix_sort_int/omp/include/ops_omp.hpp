@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 #include "melnik_i_radix_sort_int/common/include/common.hpp"

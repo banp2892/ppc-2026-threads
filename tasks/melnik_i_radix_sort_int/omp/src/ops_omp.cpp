@@ -31,7 +31,7 @@ std::vector<MelnikIRadixSortIntOMP::Range> BuildInitialRanges(std::size_t data_s
       break;
     }
     const std::size_t end = std::min(begin + chunk_size, data_size);
-    ranges.push_back(MelnikIRadixSortIntOMP::Range{begin, end});
+    ranges.push_back(MelnikIRadixSortIntOMP::Range{.begin = begin, .end = end});
   }
 
   return ranges;
@@ -72,17 +72,19 @@ bool MelnikIRadixSortIntOMP::RunImpl() {
 
   const std::vector<Range> ranges = BuildInitialRanges(data_size, num_threads);
   const int active_ranges = static_cast<int>(ranges.size());
+  auto &output = GetOutput();
 
-#pragma omp parallel for schedule(static) num_threads(num_threads)
+#pragma omp parallel for default(none) shared(active_ranges, buffer, output, ranges) schedule(static) \
+    num_threads(num_threads)
   for (int range_index = 0; range_index < active_ranges; ++range_index) {
     const Range range = ranges[static_cast<std::size_t>(range_index)];
     if (range.begin < range.end) {
-      RadixSortRange(GetOutput(), buffer, range.begin, range.end);
+      RadixSortRange(output, buffer, range.begin, range.end);
     }
   }
 
-  MergeSortedRanges(GetOutput(), buffer, ranges);
-  return !GetOutput().empty();
+  MergeSortedRanges(output, buffer, ranges);
+  return !output.empty();
 }
 
 bool MelnikIRadixSortIntOMP::PostProcessingImpl() {
@@ -97,21 +99,21 @@ void MelnikIRadixSortIntOMP::CountingSortByByte(const std::vector<int> &source, 
 
   for (std::size_t index = begin; index < end; ++index) {
     const std::int64_t shifted_value = static_cast<std::int64_t>(source[index]) + offset;
-    const std::size_t bucket = static_cast<std::size_t>((shifted_value / exp) % static_cast<std::int64_t>(kBuckets));
-    ++count[bucket];
+    const auto bucket = static_cast<std::size_t>((shifted_value / exp) % static_cast<std::int64_t>(kBuckets));
+    ++count.at(bucket);
   }
 
   std::array<std::size_t, kBuckets> positions{};
-  positions[0] = begin;
+  positions.at(0) = begin;
   for (std::size_t bucket = 1; bucket < kBuckets; ++bucket) {
-    positions[bucket] = positions[bucket - 1] + count[bucket - 1];
+    positions.at(bucket) = positions.at(bucket - 1U) + count.at(bucket - 1U);
   }
 
   for (std::size_t index = begin; index < end; ++index) {
     const std::int64_t shifted_value = static_cast<std::int64_t>(source[index]) + offset;
-    const std::size_t bucket = static_cast<std::size_t>((shifted_value / exp) % static_cast<std::int64_t>(kBuckets));
-    destination[positions[bucket]] = source[index];
-    ++positions[bucket];
+    const auto bucket = static_cast<std::size_t>((shifted_value / exp) % static_cast<std::int64_t>(kBuckets));
+    destination[positions.at(bucket)] = source[index];
+    ++positions.at(bucket);
   }
 }
 
@@ -126,8 +128,8 @@ void MelnikIRadixSortIntOMP::RadixSortRange(std::vector<int> &data, std::vector<
   const auto range_begin = data.begin() + static_cast<ptrdiff_t>(begin);
   const auto range_end = data.begin() + static_cast<ptrdiff_t>(end);
   const auto [min_it, max_it] = std::ranges::minmax_element(range_begin, range_end);
-  const std::int64_t min_value = static_cast<std::int64_t>(*min_it);
-  const std::int64_t max_value = static_cast<std::int64_t>(*max_it);
+  const auto min_value = static_cast<std::int64_t>(*min_it);
+  const auto max_value = static_cast<std::int64_t>(*max_it);
   const std::int64_t offset = (min_value < 0) ? -min_value : 0;
   const std::int64_t max_shifted_value = max_value + offset;
 
@@ -197,7 +199,7 @@ void MelnikIRadixSortIntOMP::MergeSortedRanges(std::vector<int> &data, std::vect
 
       const Range right = current_ranges[left_pos + 1U];
       MergeRanges(*source, *destination, left, right, left.begin);
-      next_ranges[pair_index] = Range{left.begin, right.end};
+      next_ranges[pair_index] = Range{.begin = left.begin, .end = right.end};
     }
 
     current_ranges = std::move(next_ranges);
