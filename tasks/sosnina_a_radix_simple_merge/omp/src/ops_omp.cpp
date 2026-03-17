@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "sosnina_a_radix_simple_merge/common/include/common.hpp"
@@ -109,7 +110,7 @@ bool SosninaATestTaskOMP::RunImpl() {
   size_t pos = 0;
 
   for (int i = 0; i < num_parts; ++i) {
-    const size_t part_size = base_size + (static_cast<size_t>(i) < remainder ? 1 : 0);
+    const size_t part_size = base_size + (std::cmp_less(i, remainder) ? 1 : 0);
     parts[i].assign(data.begin() + static_cast<std::ptrdiff_t>(pos),
                     data.begin() + static_cast<std::ptrdiff_t>(pos + part_size));
     pos += part_size;
@@ -128,8 +129,8 @@ bool SosninaATestTaskOMP::RunImpl() {
 
 #pragma omp parallel for default(none) shared(current, next) schedule(static)
     for (size_t i = 0; i < current.size() / 2; ++i) {
-      next[i].resize(current[2 * i].size() + current[2 * i + 1].size());
-      SimpleMerge(current[2 * i], current[2 * i + 1], next[i]);
+      next[i].resize(current[2 * i].size() + current[(2 * i) + 1].size());
+      SimpleMerge(current[2 * i], current[(2 * i) + 1], next[i]);
     }
     if (current.size() % 2 == 1) {
       next[half - 1] = std::move(current.back());
