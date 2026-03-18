@@ -111,6 +111,8 @@ Matrix MultiplyStandardParallelImpl(const Matrix &a, const Matrix &b) {
   return result;
 }
 
+Matrix StrassenMultiplyIterative(const Matrix &a, const Matrix &b, int leaf_size, int max_depth, int current_depth);
+
 void ComputeStrassenLevel(const Matrix &a11, const Matrix &a12, const Matrix &a21, const Matrix &a22, const Matrix &b11,
                           const Matrix &b12, const Matrix &b21, const Matrix &b22, Matrix &c11, Matrix &c12,
                           Matrix &c21, Matrix &c22, int leaf_size, int max_depth, int current_depth) {
@@ -129,46 +131,46 @@ void ComputeStrassenLevel(const Matrix &a11, const Matrix &a12, const Matrix &a2
 #pragma omp section
       {
         Matrix temp = SubtractMatrixImpl(b12, b22);
-        p1 = MultiplyStandardParallelImpl(a11, temp);
+        p1 = StrassenMultiplyIterative(a11, temp, leaf_size, max_depth, current_depth + 1);
       }
 
 #pragma omp section
       {
         Matrix temp = AddMatrixImpl(a11, a12);
-        p2 = MultiplyStandardParallelImpl(temp, b22);
+        p2 = StrassenMultiplyIterative(temp, b22, leaf_size, max_depth, current_depth + 1);
       }
 
 #pragma omp section
       {
         Matrix temp = AddMatrixImpl(a21, a22);
-        p3 = MultiplyStandardParallelImpl(temp, b11);
+        p3 = StrassenMultiplyIterative(temp, b11, leaf_size, max_depth, current_depth + 1);
       }
 
 #pragma omp section
       {
         Matrix temp = SubtractMatrixImpl(b21, b11);
-        p4 = MultiplyStandardParallelImpl(a22, temp);
+        p4 = StrassenMultiplyIterative(a22, temp, leaf_size, max_depth, current_depth + 1);
       }
 
 #pragma omp section
       {
         Matrix temp1 = AddMatrixImpl(a11, a22);
         Matrix temp2 = AddMatrixImpl(b11, b22);
-        p5 = MultiplyStandardParallelImpl(temp1, temp2);
+        p5 = StrassenMultiplyIterative(temp1, temp2, leaf_size, max_depth, current_depth + 1);
       }
 
 #pragma omp section
       {
         Matrix temp1 = SubtractMatrixImpl(a12, a22);
         Matrix temp2 = AddMatrixImpl(b21, b22);
-        p6 = MultiplyStandardParallelImpl(temp1, temp2);
+        p6 = StrassenMultiplyIterative(temp1, temp2, leaf_size, max_depth, current_depth + 1);
       }
 
 #pragma omp section
       {
         Matrix temp1 = SubtractMatrixImpl(a11, a21);
         Matrix temp2 = AddMatrixImpl(b11, b12);
-        p7 = MultiplyStandardParallelImpl(temp1, temp2);
+        p7 = StrassenMultiplyIterative(temp1, temp2, leaf_size, max_depth, current_depth + 1);
       }
     }
   } else {
@@ -176,28 +178,28 @@ void ComputeStrassenLevel(const Matrix &a11, const Matrix &a12, const Matrix &a2
     Matrix temp2;
 
     temp1 = SubtractMatrixImpl(b12, b22);
-    p1 = MultiplyStandardParallelImpl(a11, temp1);
+    p1 = StrassenMultiplyIterative(a11, temp1, leaf_size, max_depth, current_depth + 1);
 
     temp1 = AddMatrixImpl(a11, a12);
-    p2 = MultiplyStandardParallelImpl(temp1, b22);
+    p2 = StrassenMultiplyIterative(temp1, b22, leaf_size, max_depth, current_depth + 1);
 
     temp1 = AddMatrixImpl(a21, a22);
-    p3 = MultiplyStandardParallelImpl(temp1, b11);
+    p3 = StrassenMultiplyIterative(temp1, b11, leaf_size, max_depth, current_depth + 1);
 
     temp1 = SubtractMatrixImpl(b21, b11);
-    p4 = MultiplyStandardParallelImpl(a22, temp1);
+    p4 = StrassenMultiplyIterative(a22, temp1, leaf_size, max_depth, current_depth + 1);
 
     temp1 = AddMatrixImpl(a11, a22);
     temp2 = AddMatrixImpl(b11, b22);
-    p5 = MultiplyStandardParallelImpl(temp1, temp2);
+    p5 = StrassenMultiplyIterative(temp1, temp2, leaf_size, max_depth, current_depth + 1);
 
     temp1 = SubtractMatrixImpl(a12, a22);
     temp2 = AddMatrixImpl(b21, b22);
-    p6 = MultiplyStandardParallelImpl(temp1, temp2);
+    p6 = StrassenMultiplyIterative(temp1, temp2, leaf_size, max_depth, current_depth + 1);
 
     temp1 = SubtractMatrixImpl(a11, a21);
     temp2 = AddMatrixImpl(b11, b12);
-    p7 = MultiplyStandardParallelImpl(temp1, temp2);
+    p7 = StrassenMultiplyIterative(temp1, temp2, leaf_size, max_depth, current_depth + 1);
   }
 
   Matrix temp;
@@ -214,7 +216,7 @@ void ComputeStrassenLevel(const Matrix &a11, const Matrix &a12, const Matrix &a2
   c22 = SubtractMatrixImpl(temp, p7);
 }
 
-Matrix StrassenMultiplyIterative(const Matrix &a, const Matrix &b, int leaf_size, int max_depth) {
+Matrix StrassenMultiplyIterative(const Matrix &a, const Matrix &b, int leaf_size, int max_depth, int current_depth) {
   int n = a.size;
 
   if (n <= leaf_size || n % 2 != 0) {
@@ -240,9 +242,13 @@ Matrix StrassenMultiplyIterative(const Matrix &a, const Matrix &b, int leaf_size
   Matrix c21(half);
   Matrix c22(half);
 
-  ComputeStrassenLevel(a11, a12, a21, a22, b11, b12, b21, b22, c11, c12, c21, c22, leaf_size, max_depth, 0);
+  ComputeStrassenLevel(a11, a12, a21, a22, b11, b12, b21, b22, c11, c12, c21, c22, leaf_size, max_depth, current_depth);
 
   return MergeMatricesImpl(c11, c12, c21, c22);
+}
+
+Matrix StrassenMultiplyIterative(const Matrix &a, const Matrix &b, int leaf_size, int max_depth) {
+  return StrassenMultiplyIterative(a, b, leaf_size, max_depth, 0);
 }
 
 }  // namespace
@@ -306,7 +312,7 @@ bool MorozovaSStrassenMultiplicationOMP::RunImpl() {
   const int leaf_size = 64;
 
   if (n_ <= leaf_size) {
-    c_ = MultiplyStandardParallel(a_, b_);
+    c_ = MultiplyStandardParallelImpl(a_, b_);
   } else {
     c_ = StrassenMultiplyIterative(a_, b_, leaf_size, kMaxParallelDepth);
   }
