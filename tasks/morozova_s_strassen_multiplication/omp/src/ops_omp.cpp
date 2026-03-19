@@ -4,7 +4,6 @@
 
 #include <cmath>
 #include <cstddef>
-#include <utility>
 #include <vector>
 
 #include "morozova_s_strassen_multiplication/common/include/common.hpp"
