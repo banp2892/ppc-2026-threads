@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <complex>
-#include <cstddef>
+#include <csize_t>
 #include <vector>
 
 #include "liulin_y_complex_ccs/common/include/common.hpp"
@@ -50,62 +50,63 @@ bool LiulinYComplexCcsOmp::RunImpl() {
   const auto &mat_b = GetInput().second;
   auto &mat_res = GetOutput();
 
-  const int rows_a = mat_a.count_rows;
-  const int cols_b = mat_b.count_cols;
-  std::vector<std::vector<std::complex<double>>> thread_values(static_cast<size_t>(cols_b));
-  std::vector<std::vector<int>> thread_row_indices(static_cast<size_t>(cols_b));
+  const int rows_a_count = mat_a.count_rows;
+  const int cols_b_count = mat_b.count_cols;
 
-#pragma omp parallel default(none) shared(mat_a, mat_b, thread_values, thread_row_indices, cols_b, rows_a)
-  std::vector<std::complex<double>> accumulator(static_cast<size_t>(rows_a), {0.0, 0.0});
-  std::vector<int> active_rows;
-  std::vector<int> row_marker(static_cast<size_t>(rows_a), -1);
+  std::vector<std::vector<std::complex<double>>> thread_values(static_cast<size_t>(cols_b_count));
+  std::vector<std::vector<int>> thread_row_indices(static_cast<size_t>(cols_b_count));
+
+#pragma omp parallel default(none) shared(mat_a, mat_b, thread_values, thread_row_indices, cols_b_count, rows_a_count)
+  {
+    std::vector<std::complex<double>> accumulator(static_cast<size_t>(rows_a_count), {0.0, 0.0});
+    std::vector<int> active_rows;
+    std::vector<int> row_marker(static_cast<size_t>(rows_a_count), -1);
 
 #pragma omp for schedule(dynamic)
-  for (int col_idx_b = 0; col_idx_b < cols_b; ++col_idx_b) {
-    const int col_start = mat_b.col_index[static_cast<size_t>(col_idx_b)];
-    const int col_end = mat_b.col_index[static_cast<size_t>(col_idx_b) + 1];
+    for (int col_idx_b = 0; col_idx_b < cols_b_count; ++col_idx_b) {
+      const int col_start = mat_b.col_index[static_cast<size_t>(col_idx_b)];
+      const int col_end = mat_b.col_index[static_cast<size_t>(col_idx_b) + 1];
 
-    for (int idx_b = col_start; idx_b < col_end; ++idx_b) {
-      const int row_idx_b = mat_b.row_index[static_cast<size_t>(idx_b)];
-      const std::complex<double> val_b = mat_b.values[static_cast<size_t>(idx_b)];
+      for (int idx_b = col_start; idx_b < col_end; ++idx_b) {
+        const int row_idx_b = mat_b.row_index[static_cast<size_t>(idx_b)];
+        const std::complex<double> val_b = mat_b.values[static_cast<size_t>(idx_b)];
 
-      const int a_start = mat_a.col_index[static_cast<size_t>(row_idx_b)];
-      const int a_end = mat_a.col_index[static_cast<size_t>(row_idx_b) + 1];
+        const int a_start = mat_a.col_index[static_cast<size_t>(row_idx_b)];
+        const int a_end = mat_a.col_index[static_cast<size_t>(row_idx_b) + 1];
 
-      for (int idx_a = a_start; idx_a < a_end; ++idx_a) {
-        const int row_idx_a = mat_a.row_index[static_cast<size_t>(idx_a)];
-        if (row_marker[static_cast<size_t>(row_idx_a)] != col_idx_b) {
-          row_marker[static_cast<size_t>(row_idx_a)] = col_idx_b;
-          active_rows.push_back(row_idx_a);
-          accumulator[static_cast<size_t>(row_idx_a)] = mat_a.values[static_cast<size_t>(idx_a)] * val_b;
-        } else {
-          accumulator[static_cast<size_t>(row_idx_a)] += mat_a.values[static_cast<size_t>(idx_a)] * val_b;
+        for (int idx_a = a_start; idx_a < a_end; ++idx_a) {
+          const int row_idx_a = mat_a.row_index[static_cast<size_t>(idx_a)];
+          if (row_marker[static_cast<size_t>(row_idx_a)] != col_idx_b) {
+            row_marker[static_cast<size_t>(row_idx_a)] = col_idx_b;
+            active_rows.push_back(row_idx_a);
+            accumulator[static_cast<size_t>(row_idx_a)] = mat_a.values[static_cast<size_t>(idx_a)] * val_b;
+          } else {
+            accumulator[static_cast<size_t>(row_idx_a)] += mat_a.values[static_cast<size_t>(idx_a)] * val_b;
+          }
         }
       }
-    }
 
-    std::sort(active_rows.begin(), active_rows.end());
+      std::sort(active_rows.begin(), active_rows.end());
 
-    for (const int row_idx_res : active_rows) {
-      const auto final_val = accumulator[static_cast<size_t>(row_idx_res)];
-      if (IsValueNonZero(final_val)) {
-        thread_values[static_cast<size_t>(col_idx_b)].push_back(final_val);
-        thread_row_indices[static_cast<size_t>(col_idx_b)].push_back(row_idx_res);
+      for (const int row_idx_res : active_rows) {
+        const std::complex<double> final_val = accumulator[static_cast<size_t>(row_idx_res)];
+        if (IsValueNonZero(final_val)) {
+          thread_values[static_cast<size_t>(col_idx_b)].push_back(final_val);
+          thread_row_indices[static_cast<size_t>(col_idx_b)].push_back(row_idx_res);
+        }
       }
+      active_rows.clear();
     }
-    active_rows.clear();
   }
-}
+  mat_res.col_index[0] = 0;
+  for (size_t col_idx = 0; col_idx < static_cast<size_t>(cols_b_count); ++col_idx) {
+    mat_res.values.insert(mat_res.values.end(), thread_values[col_idx].begin(), thread_values[col_idx].end());
+    mat_res.row_index.insert(mat_res.row_index.end(), thread_row_indices[col_idx].begin(),
+                             thread_row_indices[col_idx].end());
+    mat_res.col_index[col_idx + 1] = static_cast<int>(mat_res.values.size());
+  }
 
-mat_res.col_index[0] = 0;
-for (size_t col_idx = 0; col_idx < static_cast<size_t>(cols_b); ++col_idx) {
-  mat_res.values.insert(mat_res.values.end(), thread_values[col_idx].begin(), thread_values[col_idx].end());
-  mat_res.row_index.insert(mat_res.row_index.end(), thread_row_indices[col_idx].begin(),
-                           thread_row_indices[col_idx].end());
-  mat_res.col_index[col_idx + 1] = static_cast<int>(mat_res.values.size());
-}
-
-return true;
+  return true;
 }
 
 bool LiulinYComplexCcsOmp::PostProcessingImpl() {
