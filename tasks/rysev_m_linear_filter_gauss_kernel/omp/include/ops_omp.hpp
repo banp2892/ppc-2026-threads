@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "task/include/task.hpp"
 #include "rysev_m_linear_filter_gauss_kernel/common/include/common.hpp"
+#include "task/include/task.hpp"
 
 namespace rysev_m_linear_filter_gauss_kernel {
 
