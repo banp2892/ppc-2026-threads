@@ -8,7 +8,7 @@
 #include <numbers>
 #include <random>
 #include <stdexcept>
-#include <vector>
+#include <string>
 
 #include "gusev_d_double_sort_even_odd_batcher_omp/common/include/common.hpp"
 #include "gusev_d_double_sort_even_odd_batcher_omp/omp/include/ops_omp.hpp"
@@ -73,6 +73,8 @@ class OmpThreadCountGuard {
  private:
   int previous_count_;
 };
+
+class GusevDoubleSortEvenOddBatcherOmpEnabled : public ::testing::TestWithParam<int> {};
 
 OutType RunTaskPipeline(const InType &input) {
   DoubleSortEvenOddBatcherOMP task(input);
@@ -185,88 +187,88 @@ OutType RunWithInputMutationAfterPreProcessing(const InType &input, ValueType fi
   return task.GetOutput();
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, SortsEmptyInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, SortsEmptyInput) {
   CheckMatchesStdSort({});
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, SortsSingleElement) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, SortsSingleElement) {
   CheckMatchesStdSort({42.0});
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, SortsAlreadySortedInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, SortsAlreadySortedInput) {
   CheckMatchesStdSort({-7.0, -2.0, -0.0, 0.0, 1.5, 3.0, 4.0, 9.0});
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, SortsReverseSortedInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, SortsReverseSortedInput) {
   CheckMatchesStdSort({9.0, 4.0, 3.0, 1.5, 0.0, -0.0, -2.0, -7.0});
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, SortsOddSizedInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, SortsOddSizedInput) {
   CheckMatchesStdSort({3.0, -1.0, 2.0, 0.0, 5.0});
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, SortsDenseDuplicateInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, SortsDenseDuplicateInput) {
   CheckMatchesStdSort(MakeDenseDuplicateInput());
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, SortsAllEqualInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, SortsAllEqualInput) {
   CheckMatchesStdSort(InType(257, 3.5));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, MatchesStdSortForPrimeSizedRandomInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, MatchesStdSortForPrimeSizedRandomInput) {
   CheckMatchesStdSort(GenerateRandomInput(997, 20260320));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, MatchesStdSortForLargeRandomInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, MatchesStdSortForLargeRandomInput) {
   CheckMatchesStdSort(GenerateRandomInput(4096, 20260321));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, MatchesStdSortForExtremesAndSignedZeros) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, MatchesStdSortForExtremesAndSignedZeros) {
   CheckMatchesStdSort(MakeExtremeInput());
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, MatchesStdSortForAlternatingMagnitudeInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, MatchesStdSortForAlternatingMagnitudeInput) {
   CheckMatchesStdSort(MakeAlternatingMagnitudeInput());
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, MatchesStdSortWhenInputSizeIsLessThanThreadCount) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, MatchesStdSortWhenInputSizeIsLessThanThreadCount) {
   const OmpThreadCountGuard guard(8);
   CheckMatchesStdSort({7.0, -4.0, 2.5});
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, MatchesStdSortForOddNumberOfBlocks) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, MatchesStdSortForOddNumberOfBlocks) {
   const OmpThreadCountGuard guard(5);
   CheckMatchesStdSort(GenerateRandomInput(23, 20260322));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, ValidationRejectsPreparedOutput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, ValidationRejectsPreparedOutput) {
   EXPECT_TRUE(ValidationRejectsPreparedOutputImpl());
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, ThrowsIfPreProcessingBeforeValidation) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, ThrowsIfPreProcessingBeforeValidation) {
   EXPECT_TRUE(ThrowsIfPreProcessingBeforeValidationImpl());
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, ThrowsIfRunBeforePreProcessing) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, ThrowsIfRunBeforePreProcessing) {
   EXPECT_TRUE(ThrowsIfRunBeforePreProcessingImpl());
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, ThrowsIfPostProcessingBeforeRun) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, ThrowsIfPostProcessingBeforeRun) {
   EXPECT_TRUE(ThrowsIfPostProcessingBeforeRunImpl());
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, AllowsRepeatedRunBeforePostProcessing) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, AllowsRepeatedRunBeforePostProcessing) {
   const InType input{9.0, -1.0, 5.0, 3.0, -7.0, 11.0, 0.0, 2.0};
   const auto expected_output = RunTaskPipeline(input);
   EXPECT_EQ(RunTaskTwiceBeforePostProcessing(input), expected_output);
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, UsesInputSnapshotFromPreProcessing) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, UsesInputSnapshotFromPreProcessing) {
   EXPECT_EQ(RunWithInputMutationAfterPreProcessing({5.0, 4.0, 3.0, 2.0, 1.0}, -100.0, 200.0),
             (OutType{1.0, 2.0, 3.0, 4.0, 5.0}));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, KeepsElementMultiplicity) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, KeepsElementMultiplicity) {
   const auto input = MakeDenseDuplicateInput();
   const auto output = RunTaskPipeline(input);
 
@@ -274,9 +276,17 @@ TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, KeepsElementMultiplicity)
   EXPECT_TRUE(std::ranges::is_permutation(output, input));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled, KeepsOutputEmptyAfterRunningOnEmptyInput) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabled, KeepsOutputEmptyAfterRunningOnEmptyInput) {
   const auto output = RunTaskPipeline({});
   EXPECT_TRUE(output.empty());
 }
+
+std::string PrintOmpFunctionalParamName(const ::testing::TestParamInfo<int> &info) {
+  static_cast<void>(info);
+  return "enabled";
+}
+
+INSTANTIATE_TEST_SUITE_P(gusev_d_double_sort_even_odd_batcher_omp_enabled, GusevDoubleSortEvenOddBatcherOmpEnabled,
+                         ::testing::Values(0), PrintOmpFunctionalParamName);
 
 }  // namespace

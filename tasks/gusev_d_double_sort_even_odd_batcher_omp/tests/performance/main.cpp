@@ -6,8 +6,8 @@
 #include <cstdint>
 #include <iostream>
 #include <random>
+#include <string>
 #include <utility>
-#include <vector>
 
 #include "gusev_d_double_sort_even_odd_batcher_omp/common/include/common.hpp"
 #include "gusev_d_double_sort_even_odd_batcher_omp/omp/include/ops_omp.hpp"
@@ -41,6 +41,8 @@ struct PerfRunResult {
     return result;
   }
 };
+
+class GusevDoubleSortEvenOddBatcherOmpEnabledPerf : public ::testing::TestWithParam<int> {};
 
 InType GenerateRandomInput(size_t size, uint64_t seed) {
   std::mt19937_64 generator(seed);
@@ -117,20 +119,28 @@ void RunPerfCase(const InType &input) {
   std::cout << "omp_run_time_sec:" << result.elapsed.count() << '\n';
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled_perf, RunPerfTestOMPDescending) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabledPerf, RunPerfTestOMPDescending) {
   RunPerfCase(GenerateDescendingInput(kPerfInputSize));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled_perf, RunPerfTestOMPRandom) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabledPerf, RunPerfTestOMPRandom) {
   RunPerfCase(GenerateRandomInput(kPerfInputSize, 20260320));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled_perf, RunPerfTestOMPNearlySorted) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabledPerf, RunPerfTestOMPNearlySorted) {
   RunPerfCase(GenerateNearlySortedInput(kPerfInputSize));
 }
 
-TEST(gusev_d_double_sort_even_odd_batcher_omp_enabled_perf, RunPerfTestOMPDuplicateHeavy) {
+TEST_P(GusevDoubleSortEvenOddBatcherOmpEnabledPerf, RunPerfTestOMPDuplicateHeavy) {
   RunPerfCase(GenerateDuplicateHeavyInput(kPerfInputSize));
 }
+
+std::string PrintOmpPerformanceParamName(const ::testing::TestParamInfo<int> &info) {
+  static_cast<void>(info);
+  return "enabled";
+}
+
+INSTANTIATE_TEST_SUITE_P(gusev_d_double_sort_even_odd_batcher_omp_perf, GusevDoubleSortEvenOddBatcherOmpEnabledPerf,
+                         ::testing::Values(0), PrintOmpPerformanceParamName);
 
 }  // namespace

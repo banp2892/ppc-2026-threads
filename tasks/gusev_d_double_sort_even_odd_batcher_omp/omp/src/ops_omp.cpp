@@ -23,6 +23,8 @@ constexpr int kBitsPerByte = 8;
 constexpr size_t kRadixBuckets = 256;
 constexpr uint64_t kBucketMask = 0xFFULL;
 
+static_assert((kRadixPasses % 2) == 0, "Radix sort expects the final data to remain in the input buffer");
+
 using Block = std::vector<ValueType>;
 using BlockList = std::vector<Block>;
 
@@ -74,10 +76,6 @@ void RadixSortDoubles(Block &data) {
     }
 
     std::swap(src, dst);
-  }
-
-  if (src != &data) {
-    data = std::move(*src);
   }
 }
 
@@ -165,10 +163,6 @@ BlockRange GetBlockRange(size_t block_index, size_t block_count, size_t total_si
 }
 
 size_t GetBlockCount(size_t input_size) {
-  if (input_size == 0) {
-    return 0;
-  }
-
   const auto omp_threads = static_cast<size_t>(std::max(1, omp_get_max_threads()));
   return std::max<size_t>(1, std::min(input_size, omp_threads));
 }
@@ -181,10 +175,27 @@ void FillAndSortBlock(const std::vector<ValueType> &input, Block &block, BlockRa
 
 void StoreFirstException(std::atomic_bool &has_exception, std::exception_ptr &exception) {
 #pragma omp critical
-  {
-    if (!has_exception.exchange(true)) {
-      exception = std::current_exception();
-    }
+  if (!has_exception.exchange(true)) {
+    exception = std::current_exception();
+  }
+}
+
+template <class Func>
+void ExecuteWithExceptionCapture(std::atomic_bool &has_exception, std::exception_ptr &exception, Func &&func) {
+  if (has_exception.load()) {
+    return;
+  }
+
+  try {
+    std::forward<Func>(func)();
+  } catch (...) {
+    StoreFirstException(has_exception, exception);
+  }
+}
+
+void RethrowIfCaptured(const std::exception_ptr &exception) {
+  if (exception != nullptr) {
+    std::rethrow_exception(exception);
   }
 }
 
@@ -200,21 +211,13 @@ BlockList MakeSortedBlocks(const std::vector<ValueType> &input) {
 #pragma omp parallel for default(none) shared(input, blocks, exception, has_exception) \
     firstprivate(block_count, signed_block_count, total_size) schedule(static) if (block_count > 1)
   for (std::ptrdiff_t block = 0; block < signed_block_count; ++block) {
-    if (has_exception.load()) {
-      continue;
-    }
-
-    try {
+    ExecuteWithExceptionCapture(has_exception, exception, [&]() {
       const auto index = static_cast<size_t>(block);
       FillAndSortBlock(input, blocks[index], GetBlockRange(index, block_count, total_size));
-    } catch (...) {
-      StoreFirstException(has_exception, exception);
-    }
+    });
   }
 
-  if (exception != nullptr) {
-    std::rethrow_exception(exception);
-  }
+  RethrowIfCaptured(exception);
 
   return blocks;
 }
@@ -232,20 +235,11 @@ BlockList MergeBlockPairs(const BlockList &blocks) {
 #pragma omp parallel for default(none) shared(blocks, next, exception, has_exception) firstprivate(signed_pair_count) \
     schedule(static) if (signed_pair_count > 1)
   for (std::ptrdiff_t pair = 0; pair < signed_pair_count; ++pair) {
-    if (has_exception.load()) {
-      continue;
-    }
-
-    try {
-      MergeBlockPair(blocks, next, static_cast<size_t>(pair));
-    } catch (...) {
-      StoreFirstException(has_exception, exception);
-    }
+    ExecuteWithExceptionCapture(has_exception, exception,
+                                [&]() { MergeBlockPair(blocks, next, static_cast<size_t>(pair)); });
   }
 
-  if (exception != nullptr) {
-    std::rethrow_exception(exception);
-  }
+  RethrowIfCaptured(exception);
 
   if ((blocks.size() & 1U) != 0U) {
     next.back() = blocks.back();
@@ -255,10 +249,6 @@ BlockList MergeBlockPairs(const BlockList &blocks) {
 }
 
 Block MergeBlocks(BlockList blocks) {
-  if (blocks.empty()) {
-    return {};
-  }
-
   while (blocks.size() > 1) {
     blocks = MergeBlockPairs(blocks);
   }
