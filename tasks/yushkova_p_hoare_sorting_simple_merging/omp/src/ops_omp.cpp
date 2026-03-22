@@ -90,8 +90,8 @@ void YushkovaPHoareSortingSimpleMergingOMP::Merge(std::vector<int> &values, int 
     merged.push_back(values[right_index++]);
   }
 
-  for (int idx = 0; idx < static_cast<int>(merged.size()); ++idx) {
-    values[left + idx] = merged[static_cast<std::size_t>(idx)];
+  for (std::size_t idx = 0; idx < merged.size(); ++idx) {
+    values[static_cast<std::size_t>(left) + idx] = merged[idx];
   }
 }
 
