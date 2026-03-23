@@ -123,14 +123,11 @@ bool VinyaikinaEMultidimIntegrSimpsonTBB::RunImpl() {
 
   tbb::blocked_range<int> range(0, num_threads);
 
-  I_res_ = tbb::parallel_reduce(range,
-                                0.0,  // начальное значение редукции
-                                [&](const tbb::blocked_range<int> &r, double local_res) {
+  I_res_ = tbb::parallel_reduce(range, 0.0, [&](const tbb::blocked_range<int> &r, double local_res) {
     for (int i = r.begin(); i != r.end(); ++i) {
       double left_border = limits[0].first;
       double right_border = limits[0].second;
 
-      // Логика вычисления границ для i-го куска (аналогична omp_get_thread_num())
       if (i != 0) {
         left_border = CustomRound(limits[0].first + (delta * i), actual_step[0]);
       }
@@ -141,9 +138,7 @@ bool VinyaikinaEMultidimIntegrSimpsonTBB::RunImpl() {
       local_res += OuntNtIntegral(left_border, right_border, simpson_factor, limits, actual_step, function);
     }
     return local_res;
-  },
-                                std::plus<double>()  // функция сложения результатов
-  );
+  }, std::plus<double>());
 
   return true;
 }
