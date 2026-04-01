@@ -71,6 +71,23 @@ int FindPivotParallel(const std::vector<Pt> &pts, int num_threads) {
   return best;
 }
 
+void GeneratePointsParallel(Pt *data, double step, int n, int num_threads) {
+  int chunk = n / num_threads;
+  std::vector<std::thread> threads;
+  for (int ti = 0; ti < num_threads; ti++) {
+    int lo = ti * chunk;
+    int hi = (ti == num_threads - 1) ? n : (ti + 1) * chunk;
+    threads.emplace_back([data, step, lo, hi]() {
+      for (int i = lo; i < hi; i++) {
+        data[i] = {std::cos(step * i), std::sin(step * i)};
+      }
+    });
+  }
+  for (auto &th : threads) {
+    th.join();
+  }
+}
+
 }  // namespace
 
 DergachevAGrahamScanSTL::DergachevAGrahamScanSTL(const InType &in) {
@@ -95,21 +112,7 @@ bool DergachevAGrahamScanSTL::PreProcessingImpl() {
 
   const int num_threads = ppc::util::GetNumThreads();
   if (num_threads > 1 && n > num_threads * 2) {
-    int chunk = n / num_threads;
-    std::vector<std::thread> threads;
-    auto *data = points_.data();
-    for (int t = 0; t < num_threads; t++) {
-      int lo = t * chunk;
-      int hi = (t == num_threads - 1) ? n : (t + 1) * chunk;
-      threads.emplace_back([data, step, lo, hi]() {
-        for (int i = lo; i < hi; i++) {
-          data[i] = {std::cos(step * i), std::sin(step * i)};
-        }
-      });
-    }
-    for (auto &th : threads) {
-      th.join();
-    }
+    GeneratePointsParallel(points_.data(), step, n, num_threads);
   } else {
     for (int i = 0; i < n; i++) {
       points_[static_cast<std::size_t>(i)] = {std::cos(step * i), std::sin(step * i)};
