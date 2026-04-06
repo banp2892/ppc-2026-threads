@@ -97,33 +97,32 @@ bool SamoylenkoIIntegralTrapezoidTBB::RunImpl() {
     points *= dim_sizes[i];
   }
 
-  double sum = tbb::parallel_reduce(
-      tbb::blocked_range<int64_t>(0, points),
-      0.0,
-      [&h, &dimensions, &dim_sizes, &in, &integral_function](const tbb::blocked_range<int64_t> &range, double local_sum) -> double {
-        std::vector<double> current_point(dimensions);
+  double sum = tbb::parallel_reduce(tbb::blocked_range<int64_t>(0, points), 0.0,
+                                    [&h, &dimensions, &dim_sizes, &in, &integral_function](
+                                        const tbb::blocked_range<int64_t> &range, double local_sum) -> double {
+    std::vector<double> current_point(dimensions);
 
-        for (int64_t pnt = range.begin(); pnt != range.end(); ++pnt) {
-          int64_t rem_index = pnt;
-          int weight = 1;
+    for (int64_t pnt = range.begin(); pnt != range.end(); ++pnt) {
+      int64_t rem_index = pnt;
+      int weight = 1;
 
-          for (int dim = 0; dim < dimensions; dim++) {
-            int dim_coord = static_cast<int>(rem_index % dim_sizes[dim]);
-            rem_index /= dim_sizes[dim];
+      for (int dim = 0; dim < dimensions; dim++) {
+        int dim_coord = static_cast<int>(rem_index % dim_sizes[dim]);
+        rem_index /= dim_sizes[dim];
 
-            current_point[dim] = in.a[dim] + (dim_coord * h[dim]);
+        current_point[dim] = in.a[dim] + (dim_coord * h[dim]);
 
-            if (dim_coord > 0 && dim_coord < in.n[dim]) {
-              weight *= 2;
-            }
-          }
-
-          local_sum += integral_function(current_point) * weight;
+        if (dim_coord > 0 && dim_coord < in.n[dim]) {
+          weight *= 2;
         }
+      }
 
-        return local_sum;
-      },
-      [](double local_sum1, double local_sum2) { return local_sum1 + local_sum2; });
+      local_sum += integral_function(current_point) * weight;
+    }
+
+    return local_sum;
+  },
+                                    [](double local_sum1, double local_sum2) { return local_sum1 + local_sum2; });
 
   double h_mult = 1.0;
   for (int i = 0; i < dimensions; i++) {
