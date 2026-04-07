@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "kondrashova_v_marking_components/common/include/common.hpp"
-#include "kondrashova_v_marking_components/seq/include/ops_seq.hpp"
 #include "kondrashova_v_marking_components/omp/include/ops_omp.hpp"
+#include "kondrashova_v_marking_components/seq/include/ops_seq.hpp"
 #include "performance/include/performance.hpp"
 #include "util/include/perf_test_util.hpp"
 
