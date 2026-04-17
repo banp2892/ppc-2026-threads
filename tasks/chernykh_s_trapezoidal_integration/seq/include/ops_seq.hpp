@@ -14,7 +14,6 @@ class ChernykhSTrapezoidalIntegrationSEQ : public BaseTask {
   explicit ChernykhSTrapezoidalIntegrationSEQ(const InType &in);
 
  private:
-
   static double CalculatePointAndWeight(const IntegrationInType &input, const std::vector<std::size_t> &counters,
                                         std::vector<double> &point);
 
