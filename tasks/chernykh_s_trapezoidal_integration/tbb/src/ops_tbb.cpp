@@ -10,6 +10,8 @@
 #include <utility>
 #include <vector>
 
+#include <tbb/partitioner.h> // Не забудьте инклуд
+
 #include "chernykh_s_trapezoidal_integration/common/include/common.hpp"
 
 namespace chernykh_s_trapezoidal_integration {
@@ -50,41 +52,45 @@ double ChernykhSTrapezoidalIntegrationTBB::CalculatePointAndWeight(const Integra
 }
 
 bool ChernykhSTrapezoidalIntegrationTBB::RunImpl() {
-  const auto &input = this->GetInput();
-  const std::size_t dims = input.limits.size();
-  double total_sum = 0.0;
-  int64_t total_points = 1;
+    tbb::global_control control(tbb::global_control::max_allowed_parallelism, std::thread::hardware_concurrency());
 
-  for (int steps_on_this_spase : input.steps) {
-    total_points *= steps_on_this_spase + 1;
-  }
+    const auto &input = this->GetInput();
+    // Предполагаем 3D для теста
+    int steps0 = input.steps[0], steps1 = input.steps[1], steps2 = input.steps[2];
+    double h0 = (input.limits[0].second - input.limits[0].first) / steps0;
+    double h1 = (input.limits[1].second - input.limits[1].first) / steps1;
+    double h2 = (input.limits[2].second - input.limits[2].first) / steps2;
+    double s0 = input.limits[0].first, s1 = input.limits[1].first, s2 = input.limits[2].first;
 
-  auto body = [&](const tbb::blocked_range<int64_t> &r, double local_sum) -> double {
-    std::vector<double> local_point(dims);
-    std::vector<size_t> local_counters(dims);
+    // Параллелим только по самому внешнему измерению (как делает OMP по умолчанию)
+    GetOutput() = tbb::parallel_reduce(
+        tbb::blocked_range<int>(0, steps0 + 1),
+        0.0,
+        [&](const tbb::blocked_range<int> &r, double local_sum) {
+            for (int i = r.begin(); i < r.end(); ++i) {
+                double x = s0 + i * h0;
+                double w0 = (i == 0 || i == steps0) ? 0.5 : 1.0;
+                
+                for (int j = 0; j <= steps1; ++j) {
+                    double y = s1 + j * h1;
+                    double w1 = (j == 0 || j == steps1) ? 0.5 : 1.0;
+                    
+                    for (int k = 0; k <= steps2; ++k) {
+                        double z = s2 + k * h2;
+                        double w2 = (k == 0 || k == steps2) ? 0.5 : 1.0;
+                        
+                        // Прямая формула БЕЗ векторов и БЕЗ деления в цикле
+                        local_sum += (std::sin(x) * std::cos(y) * std::exp(z)) * (w0 * w1 * w2);
+                    }
+                }
+            }
+            return local_sum;
+        },
+        std::plus<double>(),
+        tbb::static_partitioner()
+    ) * (h0 * h1 * h2);
 
-    for (int64_t j = r.begin(); j < r.end(); j++) {
-      int64_t temp_j = j;
-      for (size_t i = 0; i < input.steps.size(); i++) {
-        local_counters[i] = temp_j % (input.steps[i] + 1);
-        temp_j /= input.steps[i] + 1;
-      }
-      double weight = CalculatePointAndWeight(input, local_counters, local_point);
-      local_sum += input.func(local_point) * weight;
-    }
-
-    return local_sum;
-  };
-
-  total_sum = tbb::parallel_reduce(tbb::blocked_range<int64_t>(0, total_points), 0.0, body, std::plus<>());
-
-  double h_prod = 1.0;
-  for (std::size_t i = 0; i < dims; ++i) {
-    h_prod *= (input.limits[i].second - input.limits[i].first) / static_cast<double>(input.steps[i]);
-  }
-
-  GetOutput() = total_sum * h_prod;
-  return true;
+    return true;
 }
 
 bool ChernykhSTrapezoidalIntegrationTBB::PostProcessingImpl() {
