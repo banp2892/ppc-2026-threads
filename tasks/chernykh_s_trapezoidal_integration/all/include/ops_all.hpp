@@ -6,12 +6,12 @@
 #include "task/include/task.hpp"
 namespace chernykh_s_trapezoidal_integration {
 
-class ChernykhSTrapezoidalIntegrationOMP : public BaseTask {
+class ChernykhSTrapezoidalIntegrationALL : public BaseTask {
  public:
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
-    return ppc::task::TypeOfTask::kOMP;
+    return ppc::task::TypeOfTask::kALL;
   }
-  explicit ChernykhSTrapezoidalIntegrationOMP(const InType &in);
+  explicit ChernykhSTrapezoidalIntegrationALL(const InType &in);
 
  private:
   static double CalculatePointAndWeight(const IntegrationInType &input, const std::vector<std::size_t> &counters,
