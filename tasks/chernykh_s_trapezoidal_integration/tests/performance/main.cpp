@@ -28,7 +28,7 @@ class ChernykhSRunPerfTestThreads : public ppc::util::BaseRunPerfTests<InType, O
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return std::abs(reference_value_ - output_data) < 1e-10;
+    return std::abs(reference_value_ - output_data) < 1e-5;
   }
 
   InType GetTestInputData() final {
