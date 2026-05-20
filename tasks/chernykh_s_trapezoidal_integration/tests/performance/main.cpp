@@ -51,7 +51,7 @@ const auto kAllPerfTasks = std::tuple_cat(ppc::util::MakeAllPerfTasks<InType, Ch
                                           ppc::util::MakeAllPerfTasks<InType, ChernykhSTrapezoidalIntegrationOMP>(
                                               PPC_SETTINGS_chernykh_s_trapezoidal_integration),
                                           ppc::util::MakeAllPerfTasks<InType, ChernykhSTrapezoidalIntegrationTBB>(
-                                              PPC_SETTINGS_chernykh_s_trapezoidal_integration);
+                                              PPC_SETTINGS_chernykh_s_trapezoidal_integration));
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
