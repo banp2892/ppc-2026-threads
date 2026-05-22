@@ -38,25 +38,25 @@
 
 ### Распределение данных и используемые MPI-вызовы
 
-1) Параметры задачи `dims`, `steps`, `limits`, `func_id` распространяются от Master ранга ко всем остальным с помощью `MPI_Bcast`.
-Фрагмент кода с использованием MPI_Bcast:
+1. Параметры задачи `dims`, `steps`, `limits`, `func_id` распространяются от Master ранга ко всем остальным с помощью `MPI_Bcast`.
+   Фрагмент кода с использованием MPI_Bcast:
 
-``` cpp
+```cpp
  MPI_Bcast(&dims, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
  MPI_Bcast(input.steps.data(), static_cast<int>(dims), MPI_INT, 0, MPI_COMM_WORLD);
  MPI_Bcast(input.limits.data(), static_cast<int>(dims * 2), MPI_DOUBLE, 0, MPI_COMM_WORLD);
  MPI_Bcast(&func_id, 1, MPI_INT, 0, MPI_COMM_WORLD);
 ```
 
-2) Массив `borders`, содержащий пары `{start, end}` для каждого процесса, передаётся через `MPI_Scatter`. Каждый процесс получает свою индивидуальную пару границ, что исключает пересечение рабочих областей.
-Фрагмент кода с использованием MPI_Scatter:
+2. Массив `borders`, содержащий пары `{start, end}` для каждого процесса, передаётся через `MPI_Scatter`. Каждый процесс получает свою индивидуальную пару границ, что исключает пересечение рабочих областей.
+   Фрагмент кода с использованием MPI_Scatter:
 
 ```cpp
 MPI_Scatter(send_ptr, 2, MPI_LONG_LONG, recv_ptr, 2, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
 ```
 
-3) `MPI_Allreduce` (с операцией `MPI_SUM`) - используется для глобальной редукции — каждый процесс передает свою `local_sum`, а после выполнения операции все процессы получают итоговую `global_sum`.
-Фрагмент кода с использованием MPI_Allreduce:
+3. `MPI_Allreduce` (с операцией `MPI_SUM`) - используется для глобальной редукции — каждый процесс передает свою `local_sum`, а после выполнения операции все процессы получают итоговую `global_sum`.
+   Фрагмент кода с использованием MPI_Allreduce:
 
 ```cpp
 MPI_Allreduce(&local_sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -139,7 +139,7 @@ double ChernykhSTrapezoidalIntegrationALL::OnProcessCalculate(const IntegrationI
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build build -j$(nproc)      
+cmake --build build -j$(nproc)
 
 # Функциональные тесты
 OMP_NUM_THREADS=<число потоков> mpirun --allow-run-as-root --oversubscribe -np <число процессов> ./build/bin/ppc_func_tests --gtest_filter=*ChernykhS*

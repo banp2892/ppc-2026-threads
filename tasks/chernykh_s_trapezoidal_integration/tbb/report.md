@@ -38,9 +38,9 @@
 
 ```cpp
 total_sum = tbb::parallel_reduce(
-    tbb::blocked_range<int64_t>(0, total_points), 
-    0.0, 
-    body, 
+    tbb::blocked_range<int64_t>(0, total_points),
+    0.0,
+    body,
     std::plus<>()
 );
 ```
@@ -61,7 +61,7 @@ auto body = [&](const tbb::blocked_range<int64_t> &r, double local_sum) -> doubl
       double weight = CalculatePointAndWeight(input, local_counters, local_point);
       local_sum += input.func(local_point) * weight;
     }
-    
+
     return local_sum;
   };
 ```
@@ -113,7 +113,7 @@ auto body = [&](const tbb::blocked_range<int64_t> &r, double local_sum) -> doubl
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build build -j$(nproc)      
+cmake --build build -j$(nproc)
 
 # Функциональные тесты
 PPC_NUM_THREADS=<число потоков> ./build/bin/ppc_func_tests --gtest_filter=*ChernykhS*
