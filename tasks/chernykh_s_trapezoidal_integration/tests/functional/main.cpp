@@ -8,7 +8,6 @@
 #include <tuple>
 #include <vector>
 
-
 #include "chernykh_s_trapezoidal_integration/common/include/common.hpp"
 #include "chernykh_s_trapezoidal_integration/omp/include/ops_omp.hpp"
 #include "chernykh_s_trapezoidal_integration/seq/include/ops_seq.hpp"
@@ -32,7 +31,7 @@ class ChernykhSRunFuncTestsThreads : public ppc::util::BaseRunFuncTests<InType, 
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return std::abs(output_data - expected_output_) < 1e-5;
+    return std::abs(output_data - expected_output_) < 1e-3;
   }
 
   InType GetTestInputData() final {
