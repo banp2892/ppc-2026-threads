@@ -5,7 +5,7 @@
 
 #include "task/include/task.hpp"
 
-namespace akhmetov_daniil_strassen_dense_double_seq {
+namespace akhmetov_daniil_strassen_dense_double {
 
 using Matrix = std::vector<double>;
 using InType = Matrix;
@@ -35,4 +35,4 @@ inline Matrix GetB(const InType &input) {
 }
 
 }  // namespace format
-}  // namespace akhmetov_daniil_strassen_dense_double_seq
+}  // namespace akhmetov_daniil_strassen_dense_double

@@ -1,12 +1,12 @@
-#include "akhmetov_daniil_strassen_dense_double_seq/seq/include/ops_seq.hpp"
+#include "akhmetov_daniil_strassen_dense_double/seq/include/ops_seq.hpp"
 
 #include <cstddef>
 #include <utility>
 #include <vector>
 
-#include "akhmetov_daniil_strassen_dense_double_seq/common/include/common.hpp"
+#include "akhmetov_daniil_strassen_dense_double/common/include/common.hpp"
 
-namespace akhmetov_daniil_strassen_dense_double_seq {
+namespace akhmetov_daniil_strassen_dense_double {
 
 AkhmetovDStrassenDenseDoubleSEQ::AkhmetovDStrassenDenseDoubleSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
@@ -347,4 +347,4 @@ bool AkhmetovDStrassenDenseDoubleSEQ::PostProcessingImpl() {
   return GetOutput().size() == n * n;
 }
 
-}  // namespace akhmetov_daniil_strassen_dense_double_seq
+}  // namespace akhmetov_daniil_strassen_dense_double

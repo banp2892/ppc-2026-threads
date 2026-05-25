@@ -5,12 +5,17 @@
 #include <cstddef>
 #include <random>
 #include <string>
+#include <tuple>
 
-#include "akhmetov_daniil_strassen_dense_double_seq/common/include/common.hpp"
-#include "akhmetov_daniil_strassen_dense_double_seq/seq/include/ops_seq.hpp"
+#include "akhmetov_daniil_strassen_dense_double/all/include/ops_all.hpp"
+#include "akhmetov_daniil_strassen_dense_double/common/include/common.hpp"
+#include "akhmetov_daniil_strassen_dense_double/omp/include/ops_omp.hpp"
+#include "akhmetov_daniil_strassen_dense_double/seq/include/ops_seq.hpp"
+#include "akhmetov_daniil_strassen_dense_double/stl/include/ops_stl.hpp"
+#include "akhmetov_daniil_strassen_dense_double/tbb/include/ops_tbb.hpp"
 #include "util/include/func_test_util.hpp"
 
-namespace akhmetov_daniil_strassen_dense_double_seq {
+namespace akhmetov_daniil_strassen_dense_double {
 
 namespace {
 
@@ -78,8 +83,16 @@ TEST_P(AkhmetovDaniilRunFuncTests, StrassenTestFunctional) {
 
 const std::array<TestType, 3> kTestParam = {64, 128, 256};
 
-const auto kTestTasksList = ppc::util::AddFuncTask<AkhmetovDStrassenDenseDoubleSEQ, InType>(
-    kTestParam, "tasks/akhmetov_daniil_strassen_dense_double_seq/settings.json");
+const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<AkhmetovDStrassenDenseDoubleSEQ, InType>(
+                                               kTestParam, PPC_SETTINGS_akhmetov_daniil_strassen_dense_double),
+                                           ppc::util::AddFuncTask<AkhmetovDStrassenDenseDoubleOMP, InType>(
+                                               kTestParam, PPC_SETTINGS_akhmetov_daniil_strassen_dense_double),
+                                           ppc::util::AddFuncTask<AkhmetovDStrassenDenseDoubleTBB, InType>(
+                                               kTestParam, PPC_SETTINGS_akhmetov_daniil_strassen_dense_double),
+                                           ppc::util::AddFuncTask<AkhmetovDStrassenDenseDoubleSTL, InType>(
+                                               kTestParam, PPC_SETTINGS_akhmetov_daniil_strassen_dense_double),
+                                           ppc::util::AddFuncTask<AkhmetovDStrassenDenseDoubleALL, InType>(
+                                               kTestParam, PPC_SETTINGS_akhmetov_daniil_strassen_dense_double));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 const auto kTestName = AkhmetovDaniilRunFuncTests::PrintFuncTestName<AkhmetovDaniilRunFuncTests>;
@@ -87,4 +100,4 @@ const auto kTestName = AkhmetovDaniilRunFuncTests::PrintFuncTestName<AkhmetovDan
 INSTANTIATE_TEST_SUITE_P(RunStrassenFuncTests, AkhmetovDaniilRunFuncTests, kGtestValues, kTestName);
 
 }  // namespace
-}  // namespace akhmetov_daniil_strassen_dense_double_seq
+}  // namespace akhmetov_daniil_strassen_dense_double

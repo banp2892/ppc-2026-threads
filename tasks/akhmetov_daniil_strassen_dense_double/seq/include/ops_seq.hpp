@@ -1,9 +1,9 @@
 #pragma once
 
-#include "akhmetov_daniil_strassen_dense_double_seq/common/include/common.hpp"
+#include "akhmetov_daniil_strassen_dense_double/common/include/common.hpp"
 #include "task/include/task.hpp"
 
-namespace akhmetov_daniil_strassen_dense_double_seq {
+namespace akhmetov_daniil_strassen_dense_double {
 
 class AkhmetovDStrassenDenseDoubleSEQ : public BaseTask {
  public:
@@ -19,4 +19,4 @@ class AkhmetovDStrassenDenseDoubleSEQ : public BaseTask {
   bool PostProcessingImpl() override;
 };
 
-}  // namespace akhmetov_daniil_strassen_dense_double_seq
+}  // namespace akhmetov_daniil_strassen_dense_double
