@@ -54,7 +54,7 @@ const auto kAllPerfTasks = std::tuple_cat(ppc::util::MakeAllPerfTasks<InType, Ch
                                               PPC_SETTINGS_chernykh_s_trapezoidal_integration),
                                           ppc::util::MakeAllPerfTasks<InType, ChernykhSTrapezoidalIntegrationTBB>(
                                               PPC_SETTINGS_chernykh_s_trapezoidal_integration),
-                                              ppc::util::MakeAllPerfTasks<InType, ChernykhSTrapezoidalIntegrationSTL>(
+                                          ppc::util::MakeAllPerfTasks<InType, ChernykhSTrapezoidalIntegrationSTL>(
                                               PPC_SETTINGS_chernykh_s_trapezoidal_integration),
                                           ppc::util::MakeAllPerfTasks<InType, ChernykhSTrapezoidalIntegrationALL>(
                                               PPC_SETTINGS_chernykh_s_trapezoidal_integration));
